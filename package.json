@@ -6,11 +6,11 @@
   "packageManager": "pnpm@9.12.3",
   "scripts": {
     "build": "pnpm -r build",
-    "dev": "pnpm --parallel --filter @dct/gateway --filter @dct/core --filter @dct/connectors --filter @dct/detector --filter @dct/notifier dev",
+    "dev": "pnpm build && pnpm --parallel --filter @dct/gateway --filter @dct/core --filter @dct/connectors --filter @dct/detector --filter @dct/notifier dev",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "format": "pnpm -r format",
-    "migrate": "pnpm --filter @dct/db migrate"
+    "migrate": "pnpm build && pnpm --filter @dct/db migrate"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

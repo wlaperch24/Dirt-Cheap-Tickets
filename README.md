@@ -18,9 +18,11 @@ Single-operator, speed-first ticket deal monitor using authorized APIs/connector
    - Set `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, and `INBOUND_ALERT_EMAIL` for outbound alerts.
 2. Install dependencies:
    - `pnpm install`
-3. Run DB migration:
+3. Build workspace packages:
+   - `pnpm build`
+4. Run DB migration:
    - `pnpm --filter @dct/db migrate`
-4. Start all services (local):
+5. Start all services (local):
    - `pnpm dev`
 
 Or run full stack with Docker:
