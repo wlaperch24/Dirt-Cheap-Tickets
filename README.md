@@ -81,6 +81,13 @@ curl -X GET http://localhost:3001/admin/watches/<WATCH_ID>/comparison \
 ```
 This returns min/max observed price by source and each source's premium vs the cheapest source.
 
+## Operations health report
+Get queue lag, per-source run freshness, and notification delivery stats:
+```bash
+curl -X GET http://localhost:3001/admin/health/report \
+  -H 'x-operator-secret: change-me'
+```
+
 ## Services
 - `gateway` on `:3000`
 - `core` on `:3001`

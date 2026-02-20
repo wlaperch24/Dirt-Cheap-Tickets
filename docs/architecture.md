@@ -20,6 +20,7 @@ Single-operator ticket deal monitor optimized for low-latency alerting with auth
 
 ## Operator comparison API
 - `GET /admin/watches/:watchId/comparison` returns per-source min/max observed price and premium vs cheapest source.
+- `GET /admin/health/report` returns queue lag, connector run health, and notification delivery outcomes.
 
 ## Compliance boundary
 - Allowed: authorized APIs, partner feeds, user-initiated deep-link alerts.

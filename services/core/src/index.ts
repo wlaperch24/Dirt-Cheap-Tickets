@@ -636,6 +636,143 @@ app.post("/admin/watches/:watchId/scan-now", async (request, reply) => {
   return { ok: true, watchId: params.watchId, enqueuedSources: sources };
 });
 
+app.get("/admin/health/report", async (request, reply) => {
+  if (!requireOperatorAuth(request.headers["x-operator-secret"])) {
+    return reply.code(401).send({ ok: false, error: "unauthorized" });
+  }
+
+  const [connectorCounts, notifyCounts] = await Promise.all([
+    connectorQueue.getJobCounts("waiting", "active", "completed", "failed", "delayed", "paused"),
+    notifyQueue.getJobCounts("waiting", "active", "completed", "failed", "delayed", "paused")
+  ]);
+
+  const [connectorWaiting] = await connectorQueue.getJobs(["waiting"], 0, 0, true);
+  const [notifyWaiting] = await notifyQueue.getJobs(["waiting"], 0, 0, true);
+  const now = Date.now();
+
+  const connectorLagSeconds = connectorWaiting?.timestamp
+    ? Math.max(0, Math.round((now - connectorWaiting.timestamp) / 1000))
+    : 0;
+  const notifyLagSeconds = notifyWaiting?.timestamp
+    ? Math.max(0, Math.round((now - notifyWaiting.timestamp) / 1000))
+    : 0;
+
+  const watchSummaryRows = await query<{
+    active_watches: string;
+    stale_watches: string;
+  }>(
+    `SELECT
+      COUNT(*) FILTER (WHERE status = 'ACTIVE')::text AS active_watches,
+      COUNT(*) FILTER (
+        WHERE status = 'ACTIVE'
+          AND (last_polled_at IS NULL OR last_polled_at < NOW() - interval '5 minutes')
+      )::text AS stale_watches
+     FROM watch_specs`
+  );
+
+  const connectorRows = await query<{
+    source: string;
+    last_success_at: string | null;
+    last_failed_at: string | null;
+    success_runs_1h: string;
+    failed_runs_1h: string;
+    avg_latency_ms_1h: string | null;
+  }>(
+    `SELECT
+      source,
+      MAX(created_at) FILTER (WHERE status = 'SUCCESS')::text AS last_success_at,
+      MAX(created_at) FILTER (WHERE status = 'FAILED')::text AS last_failed_at,
+      COUNT(*) FILTER (
+        WHERE status = 'SUCCESS'
+          AND created_at >= NOW() - interval '1 hour'
+      )::text AS success_runs_1h,
+      COUNT(*) FILTER (
+        WHERE status = 'FAILED'
+          AND created_at >= NOW() - interval '1 hour'
+      )::text AS failed_runs_1h,
+      ROUND(AVG(latency_ms) FILTER (
+        WHERE status = 'SUCCESS'
+          AND created_at >= NOW() - interval '1 hour'
+      ))::text AS avg_latency_ms_1h
+     FROM connector_runs
+     GROUP BY source
+     ORDER BY source ASC`
+  );
+
+  const notificationRows = await query<{
+    status: "SENT" | "FAILED" | "QUEUED";
+    count_24h: string;
+  }>(
+    `SELECT
+      status,
+      COUNT(*)::text AS count_24h
+     FROM notifications
+     WHERE created_at >= NOW() - interval '24 hours'
+     GROUP BY status`
+  );
+
+  const recentFailures = await query<{
+    channel: string;
+    destination: string;
+    error_message: string | null;
+    created_at: string;
+  }>(
+    `SELECT
+      channel,
+      destination,
+      error_message,
+      created_at::text
+     FROM notifications
+     WHERE status = 'FAILED'
+     ORDER BY created_at DESC
+     LIMIT 5`
+  );
+
+  const notificationSummary = {
+    sent24h: Number(notificationRows.find((row) => row.status === "SENT")?.count_24h ?? "0"),
+    failed24h: Number(notificationRows.find((row) => row.status === "FAILED")?.count_24h ?? "0"),
+    queued24h: Number(notificationRows.find((row) => row.status === "QUEUED")?.count_24h ?? "0")
+  };
+
+  const watchSummary = watchSummaryRows[0] ?? { active_watches: "0", stale_watches: "0" };
+
+  return {
+    ok: true,
+    generatedAt: new Date().toISOString(),
+    watches: {
+      active: Number(watchSummary.active_watches),
+      stale: Number(watchSummary.stale_watches)
+    },
+    queues: {
+      connectorFetch: {
+        ...connectorCounts,
+        lagSeconds: connectorLagSeconds
+      },
+      notify: {
+        ...notifyCounts,
+        lagSeconds: notifyLagSeconds
+      }
+    },
+    sources: connectorRows.map((row) => ({
+      source: row.source,
+      lastSuccessAt: row.last_success_at ? new Date(row.last_success_at).toISOString() : null,
+      lastFailedAt: row.last_failed_at ? new Date(row.last_failed_at).toISOString() : null,
+      successRuns1h: Number(row.success_runs_1h),
+      failedRuns1h: Number(row.failed_runs_1h),
+      avgLatencyMs1h: row.avg_latency_ms_1h ? Number(row.avg_latency_ms_1h) : null
+    })),
+    notifications: {
+      ...notificationSummary,
+      recentFailures: recentFailures.map((row) => ({
+        channel: row.channel,
+        destination: row.destination,
+        error: row.error_message,
+        at: new Date(row.created_at).toISOString()
+      }))
+    }
+  };
+});
+
 const schedulerInterval = setInterval(async () => {
   try {
     const due = await query<{
