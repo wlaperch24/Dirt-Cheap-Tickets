@@ -18,6 +18,7 @@
     "@dct/db": "workspace:*",
     "@dct/runtime": "workspace:*",
     "bullmq": "^5.43.1",
-    "fastify": "^5.2.1"
+    "fastify": "^5.2.1",
+    "nodemailer": "^6.10.1"
   }
 }

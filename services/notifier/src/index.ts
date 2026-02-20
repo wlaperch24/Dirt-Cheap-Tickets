@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import { Worker } from "bullmq";
+import nodemailer from "nodemailer";
 import { env } from "@dct/config";
 import { notifyJobSchema, queueNames } from "@dct/contracts";
 import { query } from "@dct/db";
@@ -48,6 +49,36 @@ async function sendSms(destination: string, message: string): Promise<{ sent: bo
 }
 
 async function sendEmail(destination: string, message: string): Promise<{ sent: boolean; providerId?: string; error?: string }> {
+  if (env.SMTP_USER && env.SMTP_PASS) {
+    const smtpHost = env.SMTP_HOST || "smtp.gmail.com";
+    const smtpPort = env.SMTP_PORT ?? 465;
+    const smtpSecure = env.SMTP_SECURE;
+    const smtpFrom = env.SMTP_FROM_EMAIL ?? env.SMTP_USER;
+
+    const transport = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpSecure,
+      auth: {
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASS
+      }
+    });
+
+    try {
+      const info = await transport.sendMail({
+        from: smtpFrom,
+        to: destination,
+        subject: "Ticket Deal Alert",
+        text: message
+      });
+      return { sent: true, providerId: info.messageId };
+    } catch (error) {
+      const messageText = error instanceof Error ? error.message : "smtp_send_failed";
+      return { sent: false, error: messageText };
+    }
+  }
+
   if (!env.SENDGRID_API_KEY || !env.SENDGRID_FROM_EMAIL) {
     logger.info({ destination, message }, "email not configured; logging only");
     return { sent: false, error: "sendgrid_not_configured" };

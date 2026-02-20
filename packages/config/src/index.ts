@@ -80,6 +80,15 @@ const envSchema = z.object({
   SENDGRID_API_KEY: z.string().optional(),
   SENDGRID_FROM_EMAIL: z.string().optional(),
   SENDGRID_TO_EMAIL: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().optional(),
+  SMTP_SECURE: z
+    .string()
+    .optional()
+    .transform((v) => v !== "false"),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM_EMAIL: z.string().optional(),
   INBOUND_ALERT_EMAIL: z.string().optional(),
   OPERATOR_CONTROL_EMAIL: z.string().optional()
 });
