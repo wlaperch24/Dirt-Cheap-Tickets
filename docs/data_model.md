@@ -5,7 +5,7 @@
 2. `watch_parse_sessions`: inbound request parsing + confirmation state.
 3. `canonical_events`: normalized events for cross-source mapping.
 4. `event_aliases`: source-specific event IDs mapped to canonical IDs.
-5. `listing_observations`: append-only listing snapshots (Timescale hypertable).
+5. `listing_observations`: append-only listing snapshots (Timescale hypertable when available, regular Postgres table otherwise).
 6. `deal_signals`: detector output with confidence + evidence.
 7. `notifications`: outbound delivery status and provider IDs.
 8. `connector_runs`: telemetry and error state per polling run.

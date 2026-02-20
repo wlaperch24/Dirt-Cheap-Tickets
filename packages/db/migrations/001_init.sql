@@ -1,5 +1,16 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-CREATE EXTENSION IF NOT EXISTS "timescaledb";
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_available_extensions
+    WHERE name = 'timescaledb'
+  ) THEN
+    CREATE EXTENSION IF NOT EXISTS "timescaledb";
+  ELSE
+    RAISE NOTICE 'timescaledb not available, using regular PostgreSQL tables';
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS watch_specs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -86,7 +97,16 @@ CREATE TABLE IF NOT EXISTS listing_observations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-SELECT create_hypertable('listing_observations', 'observed_at', if_not_exists => TRUE);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_extension
+    WHERE extname = 'timescaledb'
+  ) THEN
+    PERFORM create_hypertable('listing_observations', 'observed_at', if_not_exists => TRUE);
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS deal_signals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

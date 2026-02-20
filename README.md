@@ -22,8 +22,12 @@ Single-operator, speed-first ticket deal monitor using authorized APIs/connector
    - `pnpm build`
 4. Run DB migration:
    - `pnpm --filter @dct/db migrate`
+   - Note: TimescaleDB is optional in local dev. If unavailable, migration falls back to regular PostgreSQL tables.
 5. Start all services (local):
    - `pnpm dev`
+
+If you need to stop old local services before restarting:
+- `for p in 3000 3001 3002 3003 3004; do lsof -tiTCP:$p -sTCP:LISTEN; done | xargs kill -9 2>/dev/null || true`
 
 Or run full stack with Docker:
 - `docker compose -f /Users/williamlaperch/Documents/GitHub/Dirt-Cheap-Tickets/infra/docker-compose.yml up --build`
