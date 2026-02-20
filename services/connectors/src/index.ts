@@ -150,11 +150,11 @@ async function runFetchJob(data: unknown): Promise<void> {
   await query(
     `UPDATE watch_specs
      SET last_polled_at = NOW(),
-         last_min_price = $2,
+         last_min_price = $2::numeric,
          volatility_score = GREATEST(0, LEAST(1, COALESCE(volatility_score, 0) * 0.7 + CASE
-           WHEN $2 IS NULL THEN 0
+           WHEN $2::numeric IS NULL THEN 0
            WHEN last_min_price IS NULL THEN 0.1
-           WHEN last_min_price > 0 THEN ABS(last_min_price - $2) / last_min_price
+           WHEN last_min_price > 0 THEN ABS(last_min_price - $2::numeric) / last_min_price
            ELSE 0.1
          END))
      WHERE id = $1`,
