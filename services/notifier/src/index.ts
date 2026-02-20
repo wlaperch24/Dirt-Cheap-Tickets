@@ -3,7 +3,7 @@ import { Worker } from "bullmq";
 import { env } from "@dct/config";
 import { notifyJobSchema, queueNames } from "@dct/contracts";
 import { query } from "@dct/db";
-import { incrementMetric, logger, redis, renderMetrics } from "@dct/runtime";
+import { incrementMetric, logger, redisConnection, renderMetrics } from "@dct/runtime";
 
 const app = Fastify({ logger: false });
 
@@ -119,7 +119,7 @@ const worker = new Worker(
     }
   },
   {
-    connection: redis,
+    connection: redisConnection,
     concurrency: 12
   }
 );

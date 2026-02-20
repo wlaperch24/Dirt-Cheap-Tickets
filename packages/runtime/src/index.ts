@@ -1,14 +1,34 @@
-import { Queue } from "bullmq";
-import { Redis } from "ioredis";
+import { Queue, type ConnectionOptions } from "bullmq";
 import pino from "pino";
 import { env } from "@dct/config";
 
 export const logger = pino({ level: env.LOG_LEVEL });
 
-export const redis = new Redis(env.REDIS_URL, {
+function toRedisConnectionOptions(redisUrl: string): ConnectionOptions {
+  const parsed = new URL(redisUrl);
+  const dbPath = parsed.pathname.replace("/", "").trim();
+  return {
+    host: parsed.hostname,
+    port: parsed.port ? Number(parsed.port) : 6379,
+    username: parsed.username || undefined,
+    password: parsed.password || undefined,
+    db: dbPath.length > 0 ? Number(dbPath) : 0,
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false
+  };
+}
+
+export const redisConnection: ConnectionOptions = toRedisConnectionOptions(env.REDIS_URL);
+
+const queueConnectionOptions = {
+  connection: redisConnection
+} as const;
+
+export const redisWorkerOptions = {
+  connection: redisConnection,
   maxRetriesPerRequest: null,
   enableReadyCheck: false
-});
+} as const;
 
 const metricState = new Map<string, number>();
 
@@ -28,6 +48,6 @@ export function renderMetrics(serviceName: string): string {
   return `${lines.join("\n")}\n`;
 }
 
-export function makeQueue<T>(name: string): Queue<T> {
-  return new Queue<T>(name, { connection: redis });
+export function makeQueue(name: string): Queue {
+  return new Queue(name, queueConnectionOptions);
 }

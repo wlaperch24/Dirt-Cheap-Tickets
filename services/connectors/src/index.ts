@@ -10,7 +10,7 @@ import {
   type ConnectorAdapter
 } from "@dct/contracts";
 import { query } from "@dct/db";
-import { incrementMetric, logger, makeQueue, redis, renderMetrics } from "@dct/runtime";
+import { incrementMetric, logger, makeQueue, redisConnection, renderMetrics } from "@dct/runtime";
 import { StubhubMockAdapter } from "./adapters/stubhubMockAdapter.js";
 import { StubhubApiAdapter } from "./adapters/stubhubApiAdapter.js";
 import { TicketmasterPricingAdapter } from "./adapters/ticketmasterPricingAdapter.js";
@@ -187,7 +187,7 @@ const worker = new Worker(
     await runFetchJob(job.data);
   },
   {
-    connection: redis,
+    connection: redisConnection,
     concurrency: 8,
     limiter: {
       max: 20,

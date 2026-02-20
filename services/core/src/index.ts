@@ -13,7 +13,7 @@ import {
 } from "@dct/contracts";
 import { query } from "@dct/db";
 import { calculateAdaptiveCadenceSeconds, parseWatchIntent } from "@dct/logic";
-import { incrementMetric, logger, makeQueue, redis, renderMetrics } from "@dct/runtime";
+import { incrementMetric, logger, makeQueue, redisConnection, renderMetrics } from "@dct/runtime";
 import { resolveEventCandidates } from "./resolver.js";
 
 const connectorQueue = makeQueue(queueNames.connectorFetch);
@@ -422,7 +422,7 @@ const intakeWorker = new Worker(
     incrementMetric("core_intake_processed_total");
   },
   {
-    connection: redis,
+    connection: redisConnection,
     concurrency: 10
   }
 );

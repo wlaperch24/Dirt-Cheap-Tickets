@@ -5,7 +5,7 @@ import { env } from "@dct/config";
 import { detectSignalsJobSchema, queueNames, type ListingObservation, type WatchThresholds } from "@dct/contracts";
 import { query } from "@dct/db";
 import { detectSignals } from "@dct/logic";
-import { incrementMetric, logger, makeQueue, redis, renderMetrics } from "@dct/runtime";
+import { incrementMetric, logger, makeQueue, redisConnection, renderMetrics } from "@dct/runtime";
 
 const connectorQueue = makeQueue(queueNames.connectorFetch);
 const notifyQueue = makeQueue(queueNames.notify);
@@ -245,7 +245,7 @@ const worker = new Worker(
     }
   },
   {
-    connection: redis,
+    connection: redisConnection,
     concurrency: 6
   }
 );
