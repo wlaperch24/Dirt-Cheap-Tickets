@@ -48,7 +48,13 @@ async function sendSms(destination: string, message: string): Promise<{ sent: bo
   return { sent: true, providerId: payload.sid };
 }
 
-async function sendEmail(destination: string, message: string): Promise<{ sent: boolean; providerId?: string; error?: string }> {
+async function sendEmail(input: {
+  destination: string;
+  message: string;
+  subject?: string;
+  html?: string;
+}): Promise<{ sent: boolean; providerId?: string; error?: string }> {
+  const subject = input.subject ?? "Ticket Deal Alert";
   if (env.SMTP_USER && env.SMTP_PASS) {
     const smtpHost = env.SMTP_HOST || "smtp.gmail.com";
     const smtpPort = env.SMTP_PORT ?? 465;
@@ -68,9 +74,10 @@ async function sendEmail(destination: string, message: string): Promise<{ sent: 
     try {
       const info = await transport.sendMail({
         from: smtpFrom,
-        to: destination,
-        subject: "Ticket Deal Alert",
-        text: message
+        to: input.destination,
+        subject,
+        text: input.message,
+        html: input.html
       });
       return { sent: true, providerId: info.messageId };
     } catch (error) {
@@ -80,7 +87,7 @@ async function sendEmail(destination: string, message: string): Promise<{ sent: 
   }
 
   if (!env.SENDGRID_API_KEY || !env.SENDGRID_FROM_EMAIL) {
-    logger.info({ destination, message }, "email not configured; logging only");
+    logger.info({ destination: input.destination, message: input.message }, "email not configured; logging only");
     return { sent: false, error: "sendgrid_not_configured" };
   }
 
@@ -92,9 +99,12 @@ async function sendEmail(destination: string, message: string): Promise<{ sent: 
     },
     body: JSON.stringify({
       from: { email: env.SENDGRID_FROM_EMAIL },
-      personalizations: [{ to: [{ email: destination }] }],
-      subject: "Ticket Deal Alert",
-      content: [{ type: "text/plain", value: message }]
+      personalizations: [{ to: [{ email: input.destination }] }],
+      subject,
+      content: [
+        { type: "text/plain", value: input.message },
+        ...(input.html ? [{ type: "text/html", value: input.html }] : [])
+      ]
     })
   });
 
@@ -128,10 +138,11 @@ app.post("/admin/test-email", async (request, reply) => {
     return reply.code(400).send({ ok: false, error: "no_destination" });
   }
 
-  const result = await sendEmail(
+  const result = await sendEmail({
     destination,
-    payload.message ?? "Dirt-Cheap-Tickets notifier SMTP test."
-  );
+    subject: "Dirt-Cheap-Tickets SMTP Test",
+    message: payload.message ?? "Dirt-Cheap-Tickets notifier SMTP test."
+  });
 
   if (!result.sent) {
     return reply.code(502).send({ ok: false, destination, error: result.error ?? "send_failed" });
@@ -165,7 +176,12 @@ const worker = new Worker(
 
     const targetEmail = data.emailDestination ?? env.INBOUND_ALERT_EMAIL ?? env.SENDGRID_TO_EMAIL;
     if (targetEmail) {
-      const result = await sendEmail(targetEmail, data.message);
+      const result = await sendEmail({
+        destination: targetEmail,
+        subject: data.subject,
+        message: data.message,
+        html: data.html
+      });
       await query(
         `INSERT INTO notifications(signal_id, watch_id, channel, destination, provider_message_id, status, error_message, sent_at)
          VALUES($1, $2, 'email', $3, $4, $5, $6, CASE WHEN $5 = 'SENT' THEN NOW() ELSE NULL END)`,

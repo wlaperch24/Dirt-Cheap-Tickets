@@ -40,7 +40,9 @@ export const notifyJobSchema = z.object({
   signalId: z.string().uuid(),
   watchId: z.string().uuid(),
   source: z.enum(["STUBHUB", "TICKETMASTER_METADATA", "TICKPICK", "GAMETIME", "VIVID_SEATS"]),
+  subject: z.string().optional(),
   message: z.string(),
+  html: z.string().optional(),
   smsDestination: z.string().optional(),
   emailDestination: z.string().optional()
 });
