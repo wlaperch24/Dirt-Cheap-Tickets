@@ -1,0 +1,8 @@
+node_modules
+pnpm-lock.yaml
+.env
+*.log
+dist
+coverage
+.tmp
+.DS_Store

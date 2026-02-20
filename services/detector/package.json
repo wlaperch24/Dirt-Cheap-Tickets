@@ -1,0 +1,24 @@
+{
+  "name": "@dct/detector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/index.ts",
+    "lint": "echo 'lint not configured for @dct/detector'",
+    "test": "echo 'no tests for @dct/detector'",
+    "format": "prettier --write 'src/**/*.ts'"
+  },
+  "dependencies": {
+    "@dct/config": "workspace:*",
+    "@dct/contracts": "workspace:*",
+    "@dct/db": "workspace:*",
+    "@dct/logic": "workspace:*",
+    "@dct/runtime": "workspace:*",
+    "bullmq": "^5.43.1",
+    "fastify": "^5.2.1"
+  }
+}

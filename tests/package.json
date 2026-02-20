@@ -1,0 +1,17 @@
+{
+  "name": "@dct/tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo 'no build for tests'",
+    "dev": "tsx --test --watch src/**/*.test.ts",
+    "lint": "echo 'lint not configured for @dct/tests'",
+    "test": "tsx --test src/**/*.test.ts",
+    "format": "prettier --write 'src/**/*.ts'"
+  },
+  "dependencies": {
+    "@dct/logic": "workspace:*",
+    "@dct/contracts": "workspace:*"
+  }
+}

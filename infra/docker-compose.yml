@@ -1,0 +1,126 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: timescale/timescaledb:2.17.2-pg16
+    container_name: dct-postgres
+    environment:
+      POSTGRES_DB: dirt_cheap_tickets
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dirt_cheap_tickets"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: dct-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: dct-migrate
+    working_dir: /app
+    command: ["pnpm", "--filter", "@dct/db", "migrate"]
+    env_file:
+      - ../.env.example
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: dct-gateway
+    command: ["pnpm", "--filter", "@dct/gateway", "dev"]
+    env_file:
+      - ../.env.example
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  core:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: dct-core
+    command: ["pnpm", "--filter", "@dct/core", "dev"]
+    env_file:
+      - ../.env.example
+    ports:
+      - "3001:3001"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  connectors:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: dct-connectors
+    command: ["pnpm", "--filter", "@dct/connectors", "dev"]
+    env_file:
+      - ../.env.example
+    ports:
+      - "3002:3002"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  detector:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: dct-detector
+    command: ["pnpm", "--filter", "@dct/detector", "dev"]
+    env_file:
+      - ../.env.example
+    ports:
+      - "3003:3003"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  notifier:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: dct-notifier
+    command: ["pnpm", "--filter", "@dct/notifier", "dev"]
+    env_file:
+      - ../.env.example
+    ports:
+      - "3004:3004"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

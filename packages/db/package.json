@@ -1,0 +1,20 @@
+{
+  "name": "@dct/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/index.ts",
+    "lint": "echo 'lint not configured for @dct/db'",
+    "test": "echo 'no tests for @dct/db'",
+    "format": "prettier --write 'src/**/*.ts'",
+    "migrate": "tsx src/migrate.ts"
+  },
+  "dependencies": {
+    "@dct/config": "workspace:*",
+    "pg": "^8.13.3"
+  }
+}
