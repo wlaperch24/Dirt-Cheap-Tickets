@@ -94,6 +94,17 @@ curl -X GET http://localhost:3001/admin/health/report \
   -H 'x-operator-secret: change-me'
 ```
 
+## One-command diagnostics
+Run a full local diagnostic report:
+```bash
+pnpm checkup
+```
+
+Run diagnostics and send a live SMTP test email:
+```bash
+pnpm checkup:smtp
+```
+
 ## Services
 - `gateway` on `:3000`
 - `core` on `:3001`

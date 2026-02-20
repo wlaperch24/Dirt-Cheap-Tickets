@@ -10,7 +10,10 @@
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "format": "pnpm -r format",
-    "migrate": "pnpm build && pnpm --filter @dct/db migrate"
+    "migrate": "pnpm build && pnpm --filter @dct/db migrate",
+    "doctor": "node scripts/doctor.mjs",
+    "checkup": "node scripts/doctor.mjs",
+    "checkup:smtp": "node scripts/doctor.mjs --smtp-test"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

@@ -107,6 +107,39 @@ async function sendEmail(destination: string, message: string): Promise<{ sent: 
   return { sent: true, providerId };
 }
 
+function requireOperatorAuth(headerValue: string | string[] | undefined): boolean {
+  const provided = Array.isArray(headerValue) ? headerValue[0] : headerValue;
+  return provided === env.OPERATOR_SECRET;
+}
+
+app.post("/admin/test-email", async (request, reply) => {
+  if (!requireOperatorAuth(request.headers["x-operator-secret"])) {
+    return reply.code(401).send({ ok: false, error: "unauthorized" });
+  }
+
+  const payload = (request.body ?? {}) as {
+    to?: string;
+    message?: string;
+  };
+  const destination =
+    payload.to ?? env.INBOUND_ALERT_EMAIL ?? env.SMTP_USER ?? env.SENDGRID_TO_EMAIL;
+
+  if (!destination) {
+    return reply.code(400).send({ ok: false, error: "no_destination" });
+  }
+
+  const result = await sendEmail(
+    destination,
+    payload.message ?? "Dirt-Cheap-Tickets notifier SMTP test."
+  );
+
+  if (!result.sent) {
+    return reply.code(502).send({ ok: false, destination, error: result.error ?? "send_failed" });
+  }
+
+  return { ok: true, destination, providerId: result.providerId ?? null };
+});
+
 const worker = new Worker(
   queueNames.notify,
   async (job) => {
