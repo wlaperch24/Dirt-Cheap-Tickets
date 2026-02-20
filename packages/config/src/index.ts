@@ -1,7 +1,29 @@
 import dotenv from "dotenv";
+import fs from "node:fs";
+import path from "node:path";
 import { z } from "zod";
 
-dotenv.config();
+function findDotEnv(startDir: string): string | undefined {
+  let currentDir = path.resolve(startDir);
+  while (true) {
+    const candidate = path.join(currentDir, ".env");
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+    const parent = path.dirname(currentDir);
+    if (parent === currentDir) {
+      return undefined;
+    }
+    currentDir = parent;
+  }
+}
+
+const envPath = findDotEnv(process.cwd());
+if (envPath) {
+  dotenv.config({ path: envPath });
+} else {
+  dotenv.config();
+}
 
 const envSchema = z.object({
   NODE_ENV: z.string().default("development"),
