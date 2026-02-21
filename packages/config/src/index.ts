@@ -43,6 +43,10 @@ const envSchema = z.object({
   TICKETMASTER_API_KEY: z.string().optional(),
   STUBHUB_CLIENT_ID: z.string().optional(),
   STUBHUB_CLIENT_SECRET: z.string().optional(),
+  ENABLE_STUBHUB_SOURCE: z
+    .string()
+    .optional()
+    .transform((v) => v !== "false"),
   STUBHUB_USE_MOCK: z
     .string()
     .optional()

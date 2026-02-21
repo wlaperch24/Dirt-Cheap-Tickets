@@ -40,6 +40,19 @@ function requireOperatorAuth(headerValue: string | string[] | undefined): boolea
   return provided === env.OPERATOR_SECRET;
 }
 
+function enabledSources(): SourceName[] {
+  const sources: SourceName[] = [];
+  const stubhubReady =
+    env.STUBHUB_USE_MOCK || (Boolean(env.STUBHUB_CLIENT_ID) && Boolean(env.STUBHUB_CLIENT_SECRET));
+  if (env.ENABLE_STUBHUB_SOURCE && stubhubReady) {
+    sources.push("STUBHUB");
+  }
+  if (env.ENABLE_TICKETMASTER_PRICING && env.TICKETMASTER_API_KEY) {
+    sources.push("TICKETMASTER_METADATA");
+  }
+  return sources;
+}
+
 function confirmationChoice(raw: string): number | undefined {
   const match = raw.trim().match(/^[1-9]$/);
   return match ? Number(match[0]) : undefined;
@@ -610,9 +623,11 @@ app.post("/admin/watches/:watchId/scan-now", async (request, reply) => {
     return reply.code(404).send({ ok: false, error: "not_found" });
   }
 
-  const sources: SourceName[] = ["STUBHUB"];
-  if (env.ENABLE_TICKETMASTER_PRICING && env.TICKETMASTER_API_KEY) {
-    sources.push("TICKETMASTER_METADATA");
+  const sources = enabledSources();
+  if (sources.length === 0) {
+    return reply
+      .code(400)
+      .send({ ok: false, error: "no_enabled_sources", detail: "Enable Ticketmaster API and/or StubHub source." });
   }
 
   for (const source of sources) {
@@ -802,9 +817,9 @@ const schedulerInterval = setInterval(async () => {
       });
 
       const priorityScore = Math.max(1, 100 - Math.round((90 - cadence) * 1.1));
-      const sources: SourceName[] = ["STUBHUB"];
-      if (env.ENABLE_TICKETMASTER_PRICING && env.TICKETMASTER_API_KEY) {
-        sources.push("TICKETMASTER_METADATA");
+      const sources = enabledSources();
+      if (sources.length === 0) {
+        continue;
       }
 
       for (const source of sources) {

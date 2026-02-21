@@ -14,6 +14,7 @@ Single-operator, speed-first ticket deal monitor using authorized APIs/connector
 1. Copy environment file:
    - `cp /Users/williamlaperch/Documents/GitHub/Dirt-Cheap-Tickets/.env.example /Users/williamlaperch/Documents/GitHub/Dirt-Cheap-Tickets/.env`
    - Keep `STUBHUB_USE_MOCK=true` until live StubHub credentials are ready.
+   - Set `ENABLE_STUBHUB_SOURCE=false` if you want to disable StubHub (and avoid mock data).
    - Set `ENABLE_TICKETMASTER_PRICING=true` and `TICKETMASTER_API_KEY=...` for Ticketmaster comparisons.
    - For email alerts, either configure SendGrid (`SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`) or SMTP/Gmail (`SMTP_USER`, `SMTP_PASS`, `SMTP_FROM_EMAIL`).
 2. Install dependencies:
